@@ -1,5 +1,5 @@
 import { stem } from './stem.js';
-import fs from 'fs';
+import fillerWords from "./fillers.json";
 
 /**
  * NarrowMind S2 (Statistical 2) Language Model
@@ -14,7 +14,7 @@ export class NarrowMindModel {
         this.sentences = this.parseSentences(data);
         
         // Load filler words
-        this.fillerWords = this.loadFillerWords();
+        this.fillerWords = fillerWords;
         
         // Filter out filler words from tokens
         this.filteredTokens = this.filterTokens(this.tokens);
@@ -33,17 +33,17 @@ export class NarrowMindModel {
      * Load filler words from fillers.json
      * @returns {Set<string>} Set of filler words (lowercase)
      */
-    loadFillerWords() {
-        try {
-            const fillersData = fs.readFileSync('./fillers.json', 'utf-8');
-            const fillers = JSON.parse(fillersData);
-            // Convert to Set for O(1) lookup and normalize to lowercase
-            return new Set(fillers.map(word => word.toLowerCase()));
-        } catch (error) {
-            console.warn(`Warning: Could not load fillers.json: ${error.message}. Using empty filler list.`);
-            return new Set();
-        }
-    }
+    //loadFillerWords() {
+    //    try {
+    //        const fillersData = fs.readFileSync('./fillers.json', 'utf-8');
+    //        const fillers = JSON.parse(fillersData);
+    //        // Convert to Set for O(1) lookup and normalize to lowercase
+    //        return new Set(fillers.map(word => word.toLowerCase()));
+    //    } catch (error) {
+    //        console.warn(`Warning: Could not load fillers.json: ${error.message}. Using empty filler list.`);
+    //        return new Set();
+    //    }
+    //}
     
     /**
      * Filter out filler words from a token array
