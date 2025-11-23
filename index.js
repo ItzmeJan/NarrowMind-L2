@@ -190,12 +190,12 @@ async function main() {
         console.log("  RANKING RESULTS");
         console.log("=".repeat(70));
         console.log("\n  Configuration:");
-        console.log("    • TF-IDF Weight: 95%");
-        console.log("    • Character Weight: 5%");
-        console.log("    • Co-occurrence: Disabled");
+        console.log("    • TF-IDF Weight: 70%");
+        console.log("    • Character Weight: 10%");
+        console.log("    • Co-occurrence: 20% (Jaccard)");
         console.log("    • Filter Fillers: No\n");
 
-        const rankedSentences = model.rankSentences(query);
+        const rankedSentences = model.rankSentences(query, 0, 0.70, 0.10, false, 0.20, 'jaccard');
 
         // Display results
         if (rankedSentences.length === 0) {
