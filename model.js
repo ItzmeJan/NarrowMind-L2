@@ -2,8 +2,10 @@ import { stem } from './stem.js';
 import fs from 'fs';
 
 /**
- * NarrowMind S2 (Statistical 2) Model
- * TF-IDF based sentence ranking system
+ * NarrowMind S2 (Statistical 2) Language Model
+ * A statistical language model that uses multiple similarity metrics and weighting schemes
+ * for text understanding, semantic analysis, and intelligent sentence retrieval.
+ * Sentence ranking is one component of the model's overall scoring system.
  */
 export class NarrowMindModel {
     constructor(data) {
@@ -235,7 +237,9 @@ export class NarrowMindModel {
     }
 
     /**
-     * Calculate combined similarity (TF-IDF + Character-level + optional Co-occurrence)
+     * Calculate combined similarity score using the language model's multi-metric approach
+     * Combines TF-IDF, character-level, and optional co-occurrence metrics with weighted scoring
+     * This is part of the language model's overall semantic understanding and scoring system
      * @param {string} sentence1 - First sentence
      * @param {string} sentence2 - Second sentence
      * @param {number} tfidfWeight - Weight for TF-IDF (default 0.7)
@@ -264,7 +268,9 @@ export class NarrowMindModel {
     }
 
     /**
-     * Rank sentences by relevance to a query (using combined TF-IDF + character similarity + optional co-occurrence)
+     * Rank sentences by relevance to a query using the language model's scoring system
+     * Combines multiple similarity metrics (TF-IDF, character-level, co-occurrence) with configurable weights
+     * This is one component of the language model's overall text understanding and retrieval system
      * @param {string} query - Search query
      * @param {number} topN - Number of top results to return (0 = all)
      * @param {number} tfidfWeight - Weight for TF-IDF similarity (default 0.95)

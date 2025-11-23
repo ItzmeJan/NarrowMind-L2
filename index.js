@@ -9,7 +9,7 @@ import { NarrowMindModel } from "./model.js";
  */
 function displayModelInfo(model) {
     console.log("\n" + "=".repeat(70));
-    console.log("  NarrowMind S2 - Statistical Sentence Ranking Model");
+    console.log("  NarrowMind S2 - Statistical Language Model");
     console.log("=".repeat(70));
     
     // Corpus Statistics
@@ -35,7 +35,11 @@ function displayModelInfo(model) {
     // Configuration
     console.log("\n⚙️  MODEL CONFIGURATION");
     console.log("-".repeat(70));
-    console.log("  Similarity Methods:");
+    console.log("  Language Model Components:");
+    console.log("    • Statistical text analysis and understanding");
+    console.log("    • Multi-metric similarity scoring");
+    console.log("    • Semantic relationship modeling");
+    console.log("\n  Similarity Metrics (used in scoring):");
     console.log("    • TF-IDF Cosine Similarity");
     console.log("    • Character-level Similarity (LCS-based)");
     console.log("    • Word Co-occurrence Scoring (Jaccard/PMI)");
@@ -44,12 +48,14 @@ function displayModelInfo(model) {
     console.log("    • Filler word filtering");
     console.log("    • Precomputed IDF cache");
     console.log("    • Co-occurrence matrix");
+    console.log("    • N-gram analysis");
     
     // Default weights
-    console.log("\n  Default Ranking Weights:");
+    console.log("\n  Scoring Weight Configuration:");
     console.log("    • TF-IDF:           95%");
     console.log("    • Character:        5%");
     console.log("    • Co-occurrence:    0% (disabled by default)");
+    console.log("    Note: Sentence ranking uses weighted combination of these metrics");
     
     // Top words by frequency
     const wordFreq = new Map();
@@ -71,7 +77,8 @@ function displayModelInfo(model) {
 }
 
 /**
- * Main entry point for NarrowMind S2
+ * Main entry point for NarrowMind S2 Language Model
+ * Interactive shell for querying and analyzing text using the language model
  */
 async function main() {
     // Read input file with error handling
