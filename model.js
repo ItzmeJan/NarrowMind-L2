@@ -276,5 +276,17 @@ export class NarrowMindModel {
             idf: this.getIDF(stemmedToken)
         };
     }
+
+    ngram(n=2) {
+        const map = [];
+        for (var i = 0; i < this.tokens.length-1; i++) {
+            const current = []
+            for (var j = 1; k <= n; j++) {
+                const cw = this.tokens[i+j];
+                current.push(cw);
+            }
+            map.push(current);
+        }
+    }
 }
 
