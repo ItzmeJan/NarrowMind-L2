@@ -100,13 +100,9 @@ async function main() {
         output
     });
 
-    try {
-        // Get user query
-        const query = await rl.question("=> ");
-        
+    // Process a single query
+    async function processQuery(query) {
         if (!query || query.trim().length === 0) {
-            console.log("No query provided. Exiting.");
-            rl.close();
             return;
         }
 
@@ -214,7 +210,29 @@ async function main() {
         }
         
         console.log("=".repeat(70) + "\n");
+    }
 
+    // Recursive shell loop
+    try {
+        console.log("\nType 'exit', 'quit', or 'q' to exit the shell.\n");
+        
+        while (true) {
+            const query = await rl.question("=> ");
+            
+            // Check for exit commands
+            const trimmedQuery = query.trim().toLowerCase();
+            if (trimmedQuery === 'exit' || trimmedQuery === 'quit' || trimmedQuery === 'q') {
+                console.log("\nExiting NarrowMind S2. Goodbye!\n");
+                break;
+            }
+            
+            // Process the query
+            try {
+                await processQuery(query);
+            } catch (error) {
+                console.error(`\nError processing query: ${error.message}\n`);
+            }
+        }
     } catch (error) {
         console.error(`Error: ${error.message}`);
     } finally {
