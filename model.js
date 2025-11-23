@@ -7,8 +7,57 @@ export class NarrowMindModel {
         this.rawData = data;
         this.tokens = this.parseTokens(data);
         this.sentences = this.parseSentences(data);
-        this.corpusDocs = this.sentences.map(s => this.parseTokens(s));
+        this.corpusDocs = this.sentences.map(s => this.parseTokensStemmed(s));
         this.idfCache = this.precomputeIDF();
+    }
+
+    /**
+     * Basic word stemming - reduces words to their root form
+     * @param {string} word - Word to stem
+     * @returns {string} Stemmed word
+     */
+    stemWord(word) {
+        if (!word || word.length < 3) return word;
+        
+        const lowerWord = word.toLowerCase();
+        
+        // Handle common suffixes
+        // -ing, -ed, -er, -est, -ly, -s, -es, -ies
+        if (lowerWord.endsWith('ies') && lowerWord.length > 4) {
+            return lowerWord.slice(0, -3) + 'y';
+        }
+        if (lowerWord.endsWith('es') && lowerWord.length > 4) {
+            return lowerWord.slice(0, -2);
+        }
+        if (lowerWord.endsWith('s') && lowerWord.length > 3) {
+            return lowerWord.slice(0, -1);
+        }
+        if (lowerWord.endsWith('ing') && lowerWord.length > 5) {
+            return lowerWord.slice(0, -3);
+        }
+        if (lowerWord.endsWith('ed') && lowerWord.length > 4) {
+            return lowerWord.slice(0, -2);
+        }
+        if (lowerWord.endsWith('er') && lowerWord.length > 4) {
+            return lowerWord.slice(0, -2);
+        }
+        if (lowerWord.endsWith('est') && lowerWord.length > 5) {
+            return lowerWord.slice(0, -3);
+        }
+        if (lowerWord.endsWith('ly') && lowerWord.length > 4) {
+            return lowerWord.slice(0, -2);
+        }
+        if (lowerWord.endsWith('tion') && lowerWord.length > 6) {
+            return lowerWord.slice(0, -4);
+        }
+        if (lowerWord.endsWith('ness') && lowerWord.length > 6) {
+            return lowerWord.slice(0, -4);
+        }
+        if (lowerWord.endsWith('ment') && lowerWord.length > 6) {
+            return lowerWord.slice(0, -4);
+        }
+        
+        return lowerWord;
     }
 
     /**
@@ -19,6 +68,17 @@ export class NarrowMindModel {
     parseTokens(text) {
         if (!text || typeof text !== 'string') return [];
         return text.trim().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    }
+
+    /**
+     * Parse text into stemmed tokens (words)
+     * @param {string} text - Input text
+     * @returns {string[]} Array of stemmed tokens
+     */
+    parseTokensStemmed(text) {
+        if (!text || typeof text !== 'string') return [];
+        const tokens = this.parseTokens(text);
+        return tokens.map(token => this.stemWord(token.toLowerCase()));
     }
 
     /**
@@ -64,7 +124,8 @@ export class NarrowMindModel {
      */
     precomputeIDF() {
         const idfMap = new Map();
-        const allTokens = [...new Set(this.tokens)];
+        // Get all unique stemmed tokens from corpus documents
+        const allTokens = [...new Set(this.corpusDocs.flat())];
         
         for (const token of allTokens) {
             idfMap.set(token, this.calculateIDF(token, this.corpusDocs));
@@ -95,8 +156,8 @@ export class NarrowMindModel {
      * @returns {number} Cosine similarity score (0-1)
      */
     calculateTFIDFSimilarity(sentence1, sentence2) {
-        const words1 = this.parseTokens(sentence1.toLowerCase());
-        const words2 = this.parseTokens(sentence2.toLowerCase());
+        const words1 = this.parseTokensStemmed(sentence1);
+        const words2 = this.parseTokensStemmed(sentence2);
 
         if (words1.length === 0 || words2.length === 0) return 0;
 
@@ -149,7 +210,9 @@ export class NarrowMindModel {
      * @returns {number} Term frequency
      */
     getTF(token) {
-        return this.calculateTF(token.toLowerCase(), this.tokens);
+        const stemmedToken = this.stemWord(token.toLowerCase());
+        const stemmedTokens = this.parseTokensStemmed(this.rawData);
+        return this.calculateTF(stemmedToken, stemmedTokens);
     }
 
     /**
@@ -159,10 +222,11 @@ export class NarrowMindModel {
      */
     getTokenStats(token) {
         const normalizedToken = token.toLowerCase();
+        const stemmedToken = this.stemWord(normalizedToken);
         return {
-            token: normalizedToken,
+            token: stemmedToken,
             tf: this.getTF(normalizedToken),
-            idf: this.getIDF(normalizedToken)
+            idf: this.getIDF(stemmedToken)
         };
     }
 }
