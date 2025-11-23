@@ -120,6 +120,10 @@ async function main() {
         
         console.log("\n  Token Statistics:");
         console.log("-".repeat(70));
+        
+        // Collect co-occurrences for finding common ones
+        const allCoOccurrences = new Map(); // word -> Set of query tokens it co-occurs with
+        
         for (const token of queryTokens) {
             const stats = model.getTokenStats(token);
             const isFiller = model.fillerWords.has(token.toLowerCase());
@@ -133,8 +137,43 @@ async function main() {
                 if (topCoOcc.length > 0) {
                     const coOccStr = topCoOcc.map(([word, count]) => `${word}(${count})`).join(", ");
                     console.log(`      Top Co-occurrences: ${coOccStr}`);
+                    
+                    // Track co-occurrences for common analysis
+                    topCoOcc.forEach(([word, count]) => {
+                        if (!allCoOccurrences.has(word)) {
+                            allCoOccurrences.set(word, { tokens: new Set(), totalCount: 0 });
+                        }
+                        allCoOccurrences.get(word).tokens.add(stats.token);
+                        allCoOccurrences.get(word).totalCount += count;
+                    });
                 }
             }
+        }
+        
+        // Find and display common co-occurrences
+        const commonCoOccurrences = Array.from(allCoOccurrences.entries())
+            .filter(([word, data]) => data.tokens.size > 1) // Appears with multiple query tokens
+            .map(([word, data]) => ({
+                word,
+                tokenCount: data.tokens.size,
+                totalCount: data.totalCount,
+                tokens: Array.from(data.tokens)
+            }))
+            .sort((a, b) => {
+                // Sort by number of tokens first, then by total count
+                if (b.tokenCount !== a.tokenCount) {
+                    return b.tokenCount - a.tokenCount;
+                }
+                return b.totalCount - a.totalCount;
+            });
+        
+        if (commonCoOccurrences.length > 0) {
+            console.log("\n  Common Co-occurrences (across multiple query tokens):");
+            console.log("-".repeat(70));
+            commonCoOccurrences.forEach(({ word, tokenCount, totalCount, tokens }, index) => {
+                const tokensStr = tokens.join(", ");
+                console.log(`    ${index + 1}. ${word} - co-occurs with ${tokenCount} query token${tokenCount > 1 ? 's' : ''} (${tokensStr}) [total: ${totalCount}]`);
+            });
         }
 
         // Find most common token from query n-grams
