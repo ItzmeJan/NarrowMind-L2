@@ -1,5 +1,5 @@
 import { stem } from './stem.js';
-import fillerWords from "./fillers.json";
+import fillerWords from "./fillers.json" with {type:'json'};
 
 /**
  * NarrowMind S2 (Statistical 2) Language Model
@@ -14,7 +14,7 @@ export class NarrowMindModel {
         this.sentences = this.parseSentences(data);
         
         // Load filler words
-        this.fillerWords = fillerWords;
+        this.fillerWords = new Set(fillerWords);
         
         // Filter out filler words from tokens
         this.filteredTokens = this.filterTokens(this.tokens);
