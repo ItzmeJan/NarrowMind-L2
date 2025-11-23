@@ -53,7 +53,7 @@ async function main() {
         console.log("Ranking sentences...");
         console.log("=".repeat(50) + "\n");
 
-        const rankedSentences = model.rankSentences(query);
+        const rankedSentences = model.rankSentences(query, 0, 0.95, 0.05, true);
 
         // Display results
         if (rankedSentences.length === 0) {
@@ -65,10 +65,10 @@ async function main() {
                 console.log(`   ${sentence}\n`);
             });
         }
-        const map = model.ngram(3);
-        console.log(map);
-        const filtered = map.filter(a => a.includes('she'));
-        console.log(filtered);
+        //const map = model.ngram(3);
+        //console.log(map);
+        //const filtered = map.filter(a => a.includes('she'));
+        //console.log(filtered);
     } catch (error) {
         console.error(`Error: ${error.message}`);
     } finally {
