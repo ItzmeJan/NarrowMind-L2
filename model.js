@@ -222,11 +222,11 @@ export class NarrowMindModel {
      * Rank sentences by relevance to a query (using combined TF-IDF + character similarity)
      * @param {string} query - Search query
      * @param {number} topN - Number of top results to return (0 = all)
-     * @param {number} tfidfWeight - Weight for TF-IDF similarity (default 0.7)
-     * @param {number} charWeight - Weight for character similarity (default 0.3)
+     * @param {number} tfidfWeight - Weight for TF-IDF similarity (default 0.95)
+     * @param {number} charWeight - Weight for character similarity (default 0.05)
      * @returns {Array<[string, number]>} Array of [sentence, score] pairs, sorted by score
      */
-    rankSentences(query, topN = 0, tfidfWeight = 0.7, charWeight = 0.3) {
+    rankSentences(query, topN = 0, tfidfWeight = 0.95, charWeight = 0.05) {
         if (!query || typeof query !== 'string') return [];
 
         const sentenceRanks = [];
