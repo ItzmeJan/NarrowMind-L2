@@ -311,6 +311,172 @@ export class NarrowMindModel {
         };
     }
 
+    /**
+     * Build co-occurrence matrix for words appearing in the same sentences
+     * @returns {Map<string, Map<string, number>>} Nested map: word1 -> word2 -> count
+     */
+    buildCoOccurrenceMatrix() {
+        const matrix = new Map();
+        
+        // Process each sentence
+        for (const sentenceTokens of this.corpusDocs) {
+            const uniqueTokens = [...new Set(sentenceTokens)];
+            
+            // Count co-occurrences within the sentence
+            for (let i = 0; i < uniqueTokens.length; i++) {
+                const word1 = uniqueTokens[i];
+                
+                if (!matrix.has(word1)) {
+                    matrix.set(word1, new Map());
+                }
+                
+                // Count co-occurrence with all other words in the sentence
+                for (let j = 0; j < uniqueTokens.length; j++) {
+                    if (i !== j) {
+                        const word2 = uniqueTokens[j];
+                        const currentCount = matrix.get(word1).get(word2) || 0;
+                        matrix.get(word1).set(word2, currentCount + 1);
+                    }
+                }
+            }
+        }
+        
+        return matrix;
+    }
+    
+    /**
+     * Get co-occurrence count between two words
+     * @param {string} word1 - First word (stemmed)
+     * @param {string} word2 - Second word (stemmed)
+     * @returns {number} Co-occurrence count
+     */
+    getCoOccurrenceCount(word1, word2) {
+        const stemmed1 = stem(word1.toLowerCase());
+        const stemmed2 = stem(word2.toLowerCase());
+        
+        if (!this.coOccurrenceMatrix.has(stemmed1)) {
+            return 0;
+        }
+        
+        return this.coOccurrenceMatrix.get(stemmed1).get(stemmed2) || 0;
+    }
+    
+    /**
+     * Calculate co-occurrence score between two words (normalized)
+     * Uses Jaccard similarity or pointwise mutual information
+     * @param {string} word1 - First word
+     * @param {string} word2 - Second word
+     * @param {string} method - Scoring method: 'jaccard' or 'pmi' (default: 'jaccard')
+     * @returns {number} Co-occurrence score (0-1 for jaccard, unbounded for PMI)
+     */
+    calculateCoOccurrenceScore(word1, word2, method = 'jaccard') {
+        const stemmed1 = stem(word1.toLowerCase());
+        const stemmed2 = stem(word2.toLowerCase());
+        
+        if (stemmed1 === stemmed2) return 1;
+        
+        const coOccurrence = this.getCoOccurrenceCount(stemmed1, stemmed2);
+        
+        if (coOccurrence === 0) return 0;
+        
+        if (method === 'jaccard') {
+            // Jaccard similarity: intersection / union
+            const word1Sentences = new Set();
+            const word2Sentences = new Set();
+            
+            // Find sentences containing each word
+            for (let i = 0; i < this.corpusDocs.length; i++) {
+                if (this.corpusDocs[i].includes(stemmed1)) {
+                    word1Sentences.add(i);
+                }
+                if (this.corpusDocs[i].includes(stemmed2)) {
+                    word2Sentences.add(i);
+                }
+            }
+            
+            const intersection = new Set([...word1Sentences].filter(x => word2Sentences.has(x)));
+            const union = new Set([...word1Sentences, ...word2Sentences]);
+            
+            return union.size > 0 ? intersection.size / union.size : 0;
+            
+        } else if (method === 'pmi') {
+            // Pointwise Mutual Information: log(P(x,y) / (P(x) * P(y)))
+            const totalSentences = this.corpusDocs.length;
+            const word1Count = this.corpusDocs.filter(doc => doc.includes(stemmed1)).length;
+            const word2Count = this.corpusDocs.filter(doc => doc.includes(stemmed2)).length;
+            const coOccurrenceCount = this.getCoOccurrenceCount(stemmed1, stemmed2);
+            
+            if (word1Count === 0 || word2Count === 0 || coOccurrenceCount === 0) return 0;
+            
+            const pxy = coOccurrenceCount / totalSentences;
+            const px = word1Count / totalSentences;
+            const py = word2Count / totalSentences;
+            
+            return Math.log2((pxy + 0.0001) / (px * py + 0.0001)); // Add small epsilon to avoid log(0)
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Calculate word co-occurrence similarity between two sentences
+     * @param {string} sentence1 - First sentence
+     * @param {string} sentence2 - Second sentence
+     * @param {boolean} filterFillers - Whether to filter out filler words
+     * @param {string} method - Co-occurrence scoring method: 'jaccard' or 'pmi'
+     * @returns {number} Co-occurrence similarity score (0-1)
+     */
+    calculateCoOccurrenceSimilarity(sentence1, sentence2, filterFillers = false, method = 'jaccard') {
+        const words1 = this.parseTokensStemmed(sentence1, filterFillers);
+        const words2 = this.parseTokensStemmed(sentence2, filterFillers);
+        
+        if (words1.length === 0 || words2.length === 0) return 0;
+        
+        const uniqueWords1 = [...new Set(words1)];
+        const uniqueWords2 = [...new Set(words2)];
+        
+        let totalScore = 0;
+        let pairCount = 0;
+        
+        // Calculate average co-occurrence score between all word pairs
+        for (const word1 of uniqueWords1) {
+            for (const word2 of uniqueWords2) {
+                const score = this.calculateCoOccurrenceScore(word1, word2, method);
+                totalScore += score;
+                pairCount++;
+            }
+        }
+        
+        // Normalize to 0-1 range (for PMI, we'll use a sigmoid-like normalization)
+        if (method === 'pmi') {
+            // Normalize PMI scores (typically range from -inf to +inf, but usually -5 to +5)
+            return Math.max(0, Math.min(1, (totalScore / pairCount + 5) / 10));
+        }
+        
+        return pairCount > 0 ? totalScore / pairCount : 0;
+    }
+    
+    /**
+     * Get top co-occurring words for a given word
+     * @param {string} word - Word to find co-occurrences for
+     * @param {number} topN - Number of top co-occurring words to return
+     * @returns {Array<[string, number]>} Array of [word, count] pairs, sorted by count
+     */
+    getTopCoOccurrences(word, topN = 10) {
+        const stemmedWord = stem(word.toLowerCase());
+        
+        if (!this.coOccurrenceMatrix.has(stemmedWord)) {
+            return [];
+        }
+        
+        const coOccurrences = Array.from(this.coOccurrenceMatrix.get(stemmedWord).entries())
+            .map(([word, count]) => [word, count])
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, topN);
+        
+        return coOccurrences;
+    }
+
     ngram(n=2) {
         const map = [];
         for (var i = 0; i < this.tokens.length-n; i++) {
